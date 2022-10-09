@@ -2,6 +2,23 @@ const db = require("../models");
 const Tutorial = db.tutorials;
 const Op = db.Sequelize.Op;
 
+// Paging
+const getPagination = (page, size) => {
+    const limit = size ? +size : 3;
+    const offset = page ? page * limit : 0;
+
+    return { limit, offset };
+};
+
+const getPagingData = (data, page, limit) => {
+    const { count: totalItems, rows: tutorials } = data;
+    const currentPage = page ? +page : 0;
+    const totalPages = Math.ceil(totalItems / limit);
+
+     return { totalItems, tutorials, totalPages, currentPage };
+};
+
+
 // Create and Save a new Tutorial
 exports.create = (req, res) => {
     // Validate request
@@ -38,36 +55,59 @@ exports.findAll = (req, res) => {
     var condition = title ? { title: { [Op.iLike]: `%${title}%` } } : null; // op ilike = postgre operator
 
     Tutorial.findAll({ where: condition })
-        .then(data => {
-            res.send(data);
+    .then(data => {
+        res.send(data);
+    })
+    .catch(err => {
+        res.status(500).send({
+            message:
+                err.message || "Some error occurred while retrieving tutorials."
         })
-        .catch(err => {
-            res.status(500).send({
-                message:
-                    err.message || "Some error occurred while retrieving tutorials."
-            })
-        })
+    })
 };
+
+// Retrieve all Tutorials from the database with pagination
+/*
+exports.findAll = (req, res) => {
+    const { page, size, title } = req.query;
+    var condition = title ? { title: { [Op.like]: `%${title}%` } } : null;
+
+    const { limit, offset } = getPagination(page, size);
+
+    Tutorial.findAndCountAll({ where: condition, limit, offset })
+    .then(data => {
+        const response = getPagingData(data, page, limit);
+        res.send(response);
+    })
+    .catch(err => {
+        res.status(500).send({
+            message:
+            err.message || "Some error occurred while retrieving tutorials."
+        });
+    });
+};
+*/
+
 
 // Find a single Tutorial with an id
 exports.findOne = (req, res) => {
     const id = req.params.id;
 
     Tutorial.findByPk(id)
-        .then(data => {
-            if (data) {
-                res.send(data);
-            } else {
-                res.status(404).send({
-                    message: `Cannot find Tutorial with id=${id}.`
-                })
-            }
-        })
-        .catch(err => {
-            res.status(500).send({
-              message: "Error retrieving Tutorial with id=" + id
-            });
+    .then(data => {
+        if (data) {
+            res.send(data);
+        } else {
+            res.status(404).send({
+                message: `Cannot find Tutorial with id=${id}.`
+            })
+        }
+    })
+    .catch(err => {
+        res.status(500).send({
+            message: "Error retrieving Tutorial with id=" + id
         });
+    });
 };
 
 // Update a Tutorial by the id in the request
@@ -150,3 +190,23 @@ exports.findAllPublished = (req, res) => {
       });
     });
 };
+
+// find all published Tutorial with pagination
+/*
+exports.findAllPublished = (req, res) => {
+    const { page, size } = req.query;
+    const { limit, offset } = getPagination(page, size);
+
+    Tutorial.findAndCountAll({ where: { published: true }, limit, offset })
+        .then(data => {
+            const response = getPagingData(data, page, limit);
+            res.send(response);
+        })
+        .catch(err => {
+            res.status(500).send({
+                message:
+                err.message || "Some error occurred while retrieving tutorials."
+            });
+    });
+};
+*/
