@@ -65,7 +65,7 @@ exports.signin = (req, res) => {
       username: req.body.username
     }
   })
-    .then(user => {
+    .then(async user => {
       if (!user) {
         return res.status(404).send({ message: "User Not found." });
       }
